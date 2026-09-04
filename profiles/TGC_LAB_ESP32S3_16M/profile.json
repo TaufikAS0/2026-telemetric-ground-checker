@@ -1,0 +1,55 @@
+{
+  "schemaVersion": 1,
+  "profileId": "TGC_LAB_ESP32S3_16M",
+  "productCode": "TGC",
+  "hardwareRevision": "TGC_LAB_ESP32S3_16M",
+  "chipFamily": "ESP32-S3",
+  "flashSize": "16MB",
+  "flashMode": "qio",
+  "partitionScheme": "tgc-ota-16mb",
+  "stage": "lab",
+  "wifiSupported": true,
+  "ethernetSupported": "UNCONFIRMED",
+  "setupControl": "UNCONFIRMED",
+  "evidence": [
+    {
+      "claim": "chipFamily ESP32-S3 (revision v0.2, WiFi+BLE, 40MHz crystal)",
+      "source": "esptool v4.5.1 flash_id on COM11 (CH343 USB-Enhanced-SERIAL), 2026-09-04, read-only chip detection (no flash write): 'Detecting chip type... ESP32-S3 / Chip is ESP32-S3 (revision v0.2)'; MAC e0:72:a1:f4:c0:a4",
+      "evidenceLevel": "board-proven-live"
+    },
+    {
+      "claim": "flashSize 16MB",
+      "source": "Same esptool flash_id run on COM11, 2026-09-04: 'Detected flash size: 16MB' (manufacturer 0x68, device 0x4018)",
+      "evidenceLevel": "board-proven-live"
+    },
+    {
+      "claim": "flashMode qio (quad, 4 data lines)",
+      "source": "Same esptool flash_id run on COM11, 2026-09-04: 'Flash type set in eFuse: quad (4 data lines)'",
+      "evidenceLevel": "board-proven-live"
+    },
+    {
+      "claim": "wifiSupported true (station + AP)",
+      "source": "esptool 'Features: WiFi, BLE' for this chip; Wi-Fi station/AP behaviour is exercised by the firmware Initial flow and pending live LAB verification",
+      "evidenceLevel": "chip-datasheet"
+    },
+    {
+      "claim": "partitionScheme tgc-ota-16mb (nvs 0x9000/0x5000, otadata 0xe000/0x2000, ota_0 0x10000/0x300000, ota_1 0x310000/0x300000, coredump 0x610000/0x10000)",
+      "source": "TGC repo products/tgc/tgc_initial_lab/partitions.csv — layout designed in this repo for the verified 16MB flash; offsets contiguous and within 0x1000000; NOT copied from the TMM tmm-ota-4mb table",
+      "evidenceLevel": "profile-definition"
+    },
+    {
+      "claim": "hardwareRevision TGC_LAB_ESP32S3_16M is a LAB profile designation, not a vendor PCB revision",
+      "source": "The dev module arrived without recorded silkscreen marking in this session; the designation names the verified hardware facts (ESP32-S3, 16MB, quad). No vendor revision claim is made.",
+      "evidenceLevel": "profile-definition"
+    }
+  ],
+  "unknowns": [
+    "The second LAB board (COM6, CH340 USB-SERIAL) could not be identified: esptool failed twice with 'Failed to connect to Espressif device: No serial data received' at 115200 and 74880 baud. Its chip family, MAC, and flash size are UNCONFIRMED; it has no profile and no package.",
+    "Vendor PCB revision / silkscreen marking of the COM11 board: UNCONFIRMED (no physical inspection recorded).",
+    "PSRAM presence/type and the exact ESP32-S3 module part number: UNCONFIRMED.",
+    "Ethernet (ethernetSupported): UNCONFIRMED — no Ethernet hardware claimed; feature disabled in builds.",
+    "Physical setup control (setupControl): UNCONFIRMED — no button is implemented; setup mode is reached by connection failure or the provisioning clear endpoint.",
+    "Rollback-under-crash depends on a bootloader with CONFIG_BOOTLOADER_APP_ROLLBACK_ENABLE; the stock Arduino bootloader support is UNCONFIRMED. The firmware reports rollback-unavailable honestly instead of faking a slot switch.",
+    "Ground Checker measurement electronics (relays, sensors, outputs): UNCONFIRMED and intentionally NOT touched by this Initial firmware."
+  ]
+}

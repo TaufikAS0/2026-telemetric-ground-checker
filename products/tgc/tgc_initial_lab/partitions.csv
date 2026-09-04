@@ -1,0 +1,16 @@
+# TGC Initial LAB partition table (scheme id: tgc-ota-16mb).
+#
+# Designed in this repo for the board-verified 16MB flash of the TGC LAB
+# profile TGC_LAB_ESP32S3_16M (read-only esptool flash_id on COM11,
+# 2026-09-04: "Detected flash size: 16MB"). Layout is original to TGC and is
+# NOT copied from the TMM tmm-ota-4mb table: OTA slots are 3MB each to leave
+# generous headroom for future TGC firmware, and 10MB of flash past
+# 0x620000 stays unallocated for future storage needs.
+# Offsets are contiguous: 0x9000+0x5000=0xe000, 0xe000+0x2000=0x10000,
+# 0x10000+0x300000=0x310000, 0x310000+0x300000=0x610000, 0x610000+0x10000=0x620000.
+# Name,     Type, SubType,  Offset,   Size,
+nvs,        data, nvs,      0x9000,   0x5000,
+otadata,    data, ota,      0xe000,   0x2000,
+ota_0,      app,  ota_0,    0x10000,  0x300000,
+ota_1,      app,  ota_1,    0x310000, 0x300000,
+coredump,   data, coredump, 0x610000, 0x10000,

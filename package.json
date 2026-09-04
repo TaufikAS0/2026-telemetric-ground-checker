@@ -1,0 +1,14 @@
+{
+  "name": "2026-telemetric-ground-checker",
+  "version": "0.1.0",
+  "private": false,
+  "description": "TGC — Telemetric Ground Checker: product firmware source (Initial LAB firmware). One version = one package = merged/full BIN (USB) + app-only BIN (OTA), bound by one releaseId.",
+  "type": "module",
+  "scripts": {
+    "test": "node --test tests/",
+    "build:tgc-lab": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/build-tgc-lab.ps1"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

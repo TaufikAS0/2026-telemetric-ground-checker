@@ -1,0 +1,14 @@
+# Build outputs and toolchain artifacts (BINs stay out of Git history —
+# release assets only).
+products/*/build/
+build/
+*.bin
+*.elf
+*.map
+*.partitions.bin
+*.bootloader.bin
+node_modules/
+.pytest_cache/
+__pycache__/
+.DS_Store
+Thumbs.db

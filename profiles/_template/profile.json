@@ -1,0 +1,15 @@
+{
+  "schemaVersion": 1,
+  "profileId": "UNCONFIRMED",
+  "productCode": "UNCONFIRMED",
+  "hardwareRevision": "UNCONFIRMED",
+  "chipFamily": "UNCONFIRMED",
+  "flashSize": "UNCONFIRMED",
+  "flashMode": "UNCONFIRMED",
+  "partitionScheme": "UNCONFIRMED",
+  "stage": "UNCONFIRMED",
+  "wifiSupported": "UNCONFIRMED",
+  "ethernetSupported": "UNCONFIRMED",
+  "setupControl": "UNCONFIRMED",
+  "evidence": []
+}
