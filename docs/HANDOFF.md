@@ -17,9 +17,9 @@ fqbn `esp32:esp32:esp32s3:FlashSize=16M,FlashMode=qio,PartitionScheme=custom`).
 | flashSize / flashMode | `16MB` / `qio` |
 | partitionScheme | `tgc-ota-16mb` (nvs 0x9000/0x5000, otadata 0xe000/0x2000, ota_0 0x10000/0x300000, ota_1 0x310000/0x300000, coredump 0x610000/0x10000) |
 | sourceRepository | https://github.com/TaufikAS0/2026-telemetric-ground-checker |
-| sourceCommit | `04062b9f95a899de302ddd54d08d157966c15277` |
-| buildId | `04062b9` |
-| releaseId | `TGC-0.1.0-initial.1-04062b9` |
+| sourceCommit | `24113fed24b8e0f7019f78b3ad8ae15f295c69c0` |
+| buildId | `24113fe` |
+| releaseId | `TGC-0.1.0-initial.1-24113fe` |
 | releaseTag | `TGC-v0.1.0-initial.1` |
 
 ## Artifacts (build output dir: `products/tgc/build/tgc_initial_lab/`)
