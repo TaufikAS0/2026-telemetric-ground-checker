@@ -4,6 +4,7 @@ import { readFile } from "node:fs/promises";
 import { PROFILE_MANDATORY_FIELDS, validateProfile } from "../src/core/profile.mjs";
 
 const labProfileUrl = new URL("../profiles/TGC_LAB_ESP32S3_16M/profile.json", import.meta.url);
+const classicProfileUrl = new URL("../profiles/TGC_LAB_ESP32_4M/profile.json", import.meta.url);
 const templateUrl = new URL("../profiles/_template/profile.json", import.meta.url);
 
 test("mandatory profile fields are exactly the agreed build set", () => {
@@ -58,6 +59,41 @@ test("the template stays UNCONFIRMED everywhere and fails validation", async () 
   }
   const check = validateProfile(template);
   assert.ok(check.errors.length >= PROFILE_MANDATORY_FIELDS.length, "template cannot build BINs");
+});
+
+test("the classic ESP32 profile is an explicit LAB design target (not board-proven)", async () => {
+  const profile = JSON.parse(await readFile(classicProfileUrl, "utf8"));
+  const check = validateProfile(profile);
+  assert.deepEqual(check.errors, [], JSON.stringify(check.errors));
+  assert.deepEqual(check.disabledFeatures, ["ethernet", "physical-setup-control"]);
+  assert.equal(profile.productCode, "TGC");
+  assert.equal(profile.profileId, "TGC_LAB_ESP32_4M");
+  assert.equal(profile.chipFamily, "ESP32");
+  assert.equal(profile.flashSize, "4MB");
+  assert.equal(profile.flashMode, "dio");
+  assert.equal(profile.partitionScheme, "tgc-ota-4mb");
+  assert.equal(profile.stage, "lab");
+  assert.equal(profile.wifiSupported, true);
+  const evidence = JSON.stringify(profile.evidence);
+  assert.ok(evidence.includes("build-target-declaration"),
+    "the classic profile must declare its hardware facts as build target, not board-proven");
+  const unknowns = profile.unknowns.join(" ");
+  assert.ok(unknowns.includes("NO physical board is verified"),
+    "the classic profile must state that no physical board is verified");
+  assert.ok(unknowns.includes("COM6"),
+    "the closed COM6 investigation must stay recorded as an unknown");
+  assert.ok(profile.evidence.some((e) => e.evidenceLevel === "profile-definition"),
+    "the partition scheme must be declared as profile-definition (not copied)");
+});
+
+test("the two LAB profiles never claim the same chip family or partition scheme", async () => {
+  const s3 = JSON.parse(await readFile(labProfileUrl, "utf8"));
+  const classic = JSON.parse(await readFile(classicProfileUrl, "utf8"));
+  assert.notEqual(s3.profileId, classic.profileId);
+  assert.notEqual(s3.chipFamily, classic.chipFamily);
+  assert.notEqual(s3.partitionScheme, classic.partitionScheme);
+  assert.notEqual(s3.hardwareRevision, classic.hardwareRevision);
+  assert.equal(s3.productCode, classic.productCode);
 });
 
 test("the TGC profile claims only board-proven facts with evidence, no classic-ESP32 claim", async () => {

@@ -5,8 +5,9 @@
   "description": "TGC — Telemetric Ground Checker: product firmware source (Initial LAB firmware). One version = one package = merged/full BIN (USB) + app-only BIN (OTA), bound by one releaseId.",
   "type": "module",
   "scripts": {
-    "test": "node --test tests/",
-    "build:tgc-lab": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/build-tgc-lab.ps1"
+    "test": "node --test tests/*.test.mjs",
+    "build:tgc-lab": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/build-tgc-lab.ps1",
+    "build:tgc-lab-esp32": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/build-tgc-lab-esp32.ps1"
   },
   "engines": {
     "node": ">=20"

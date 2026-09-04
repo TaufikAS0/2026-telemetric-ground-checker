@@ -1,0 +1,17 @@
+# TGC Initial LAB partition table for the classic ESP32 build target
+# (scheme id: tgc-ota-4mb, profile TGC_LAB_ESP32_4M).
+#
+# This is a LAB BUILD TARGET layout designed in this repo for 4MB flash
+# (owner decision 2026-09-04). It is NOT copied from the TMM tmm-ota-4mb
+# table (different slot sizes/offsets) and NOT from the TGC ESP32-S3
+# tgc-ota-16mb table. Two OTA slots of 0x1E0000 (1,966,080 B) each; offsets
+# contiguous: 0x10000+0x1E0000=0x1F0000, 0x1F0000+0x1E0000=0x3D0000,
+# 0x3D0000+0x10000=0x3E0000 <= 0x400000 (4MB). 0x20000 stays unallocated.
+# Design target only: a physical board must pass read-only chip detection
+# (classic ESP32, 4MB flash) before any BIN is flashed onto it.
+# Name,     Type, SubType,  Offset,   Size,
+nvs,        data, nvs,      0x9000,   0x5000,
+otadata,    data, ota,      0xe000,   0x2000,
+ota_0,      app,  ota_0,    0x10000,  0x1E0000,
+ota_1,      app,  ota_1,    0x1F0000, 0x1E0000,
+coredump,   data, coredump, 0x3D0000, 0x10000,

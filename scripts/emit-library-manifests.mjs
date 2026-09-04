@@ -63,11 +63,13 @@ const releaseNotes =
   "TGC Telemetric Ground Checker Initial LAB firmware: universal Telemetric Device " +
   "Bootstrap flow (stored NVS Wi-Fi -> factory LAB Wi-Fi -> TELEMETRIC-SETUP-<suffix> AP at " +
   "http://192.168.4.1/), device-info + LAN discovery + authenticated app-only OTA with A/B " +
-  "slots and persistent pending-verify, USB merged recovery. Profile TGC_LAB_ESP32S3_16M " +
-  "(ESP32-S3 / 16MB / qio / tgc-ota-16mb; board-proven via read-only chip detection). " +
-  "Contains NO Ground Checker measurement, relay/output, or QC function. Stage lab; the " +
-  "LAB factory Wi-Fi credential is public by owner decision and must be replaced before " +
-  "production. Physical flash/provision/OTA on hardware is still pending.";
+  "slots and persistent pending-verify, USB merged recovery. Profile " +
+  `${build.profileId} (${build.chipFamily} / ${build.flashSize} / ${build.flashMode} / ` +
+  `${build.partitionScheme}; hardware facts are the profile declaration — see the source ` +
+  "repository profile evidence for verification level). Contains NO Ground Checker " +
+  "measurement, relay/output, or QC function. Stage lab; the LAB factory Wi-Fi credential " +
+  "is public by owner decision and must be replaced before production. Physical " +
+  "flash/provision/OTA on hardware is still pending.";
 
 function libraryManifest(imageType, transport, facts, offset) {
   return {

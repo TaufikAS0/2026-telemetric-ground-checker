@@ -1,0 +1,51 @@
+{
+  "schemaVersion": 1,
+  "profileId": "TGC_LAB_ESP32_4M",
+  "productCode": "TGC",
+  "hardwareRevision": "TGC_LAB_ESP32_4M",
+  "chipFamily": "ESP32",
+  "flashSize": "4MB",
+  "flashMode": "dio",
+  "partitionScheme": "tgc-ota-4mb",
+  "stage": "lab",
+  "wifiSupported": true,
+  "ethernetSupported": "UNCONFIRMED",
+  "setupControl": "UNCONFIRMED",
+  "evidence": [
+    {
+      "claim": "profileId/hardwareRevision TGC_LAB_ESP32_4M is a LAB design-target designation, not a vendor PCB revision",
+      "source": "This package is created from a BUILD TARGET decision (owner instruction 2026-09-04), not from physical board verification. No board is proven for this profile; the designation names the target facts (classic ESP32, 4MB, DIO).",
+      "evidenceLevel": "build-target-declaration"
+    },
+    {
+      "claim": "chipFamily ESP32 (classic, non-S3)",
+      "source": "Board definition 'ESP32 Dev Module' (fqbn esp32:esp32:esp32) of the installed arduino-cli core esp32:esp32 3.3.10; compile options FlashSize=4M, FlashMode=dio, PartitionScheme=custom verified present in the board menu",
+      "evidenceLevel": "build-target-declaration"
+    },
+    {
+      "claim": "flashSize 4MB / flashMode dio",
+      "source": "Selected explicitly from the available 'ESP32 Dev Module' board definition menu (FlashSize=4M default, FlashMode=dio conservative universal choice for classic ESP32 modules). This is the design target; the real flash of any future physical board must still be verified by read-only detection before flashing",
+      "evidenceLevel": "build-target-declaration"
+    },
+    {
+      "claim": "wifiSupported true (station + AP)",
+      "source": "ESP32 classic chip capability (Wi-Fi/BLE radio) per Espressif ESP32 datasheet and the esp32:esp32 core's Wi-Fi stack used by the sketch",
+      "evidenceLevel": "chip-datasheet"
+    },
+    {
+      "claim": "partitionScheme tgc-ota-4mb (nvs 0x9000/0x5000, otadata 0xe000/0x2000, ota_0 0x10000/0x1E0000, ota_1 0x1F0000/0x1E0000, coredump 0x3D0000/0x10000)",
+      "source": "TGC repo products/tgc/tgc_initial_lab_esp32/partitions.csv — layout designed in this repo for the 4MB target: two 0x1E0000 (1,966,080 B) OTA slots, offsets contiguous (0x10000+0x1E0000=0x1F0000, 0x1F0000+0x1E0000=0x3D0000, 0x3D0000+0x10000=0x3E0000 <= 0x400000). NOT copied from the TMM tmm-ota-4mb table (different slot sizes and offsets) and NOT from the TGC ESP32-S3 tgc-ota-16mb table.",
+      "evidenceLevel": "profile-definition"
+    }
+  ],
+  "unknowns": [
+    "NO physical board is verified for this profile: this is a LAB build target only. Any future physical flash requires a read-only chip detection matching classic ESP32 with 4MB flash first.",
+    "Vendor PCB revision / silkscreen marking of any future physical board: UNCONFIRMED.",
+    "PSRAM presence/type and the exact classic ESP32 module part number (e.g. ESP32-WROOM-32 vs clones): UNCONFIRMED.",
+    "Ethernet (ethernetSupported): UNCONFIRMED — no Ethernet hardware claimed; feature disabled in builds.",
+    "Physical setup control (setupControl): UNCONFIRMED — no button is implemented; setup mode is reached by connection failure or the provisioning clear endpoint.",
+    "Rollback-under-crash depends on a bootloader with CONFIG_BOOTLOADER_APP_ROLLBACK_ENABLE; the stock Arduino bootloader support is UNCONFIRMED. The firmware reports rollback-unavailable honestly instead of faking a slot switch.",
+    "Ground Checker measurement electronics (relays, sensors, outputs): UNCONFIRMED and intentionally NOT touched by this Initial firmware.",
+    "Per owner instruction (2026-09-04): the previously unidentified COM6 device is NOT being pursued further; its identity stays UNCONFIRMED and it received no package."
+  ]
+}

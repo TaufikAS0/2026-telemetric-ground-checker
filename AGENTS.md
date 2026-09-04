@@ -15,10 +15,14 @@ vault first: `obsidian-portal-hardware/README.md` (routing), then its
 
 ## Hardware profile rules
 
-- One profile per verified hardware. Current verified profile:
-  `profiles/TGC_LAB_ESP32S3_16M` (ESP32-S3 / 16MB / quad→qio / tgc-ota-16mb),
-  evidenced by read-only `esptool flash_id` on COM11, 2026-09-04
-  (see `hardware/board-detection-2026-09-04.md`).
+- One profile per verified/declared hardware target. Current profiles:
+  - `profiles/TGC_LAB_ESP32S3_16M` (ESP32-S3 / 16MB / quad→qio / tgc-ota-16mb),
+    evidenced by read-only `esptool flash_id` on COM11, 2026-09-04 —
+    **board-proven** (`hardware/board-detection-2026-09-04.md`).
+  - `profiles/TGC_LAB_ESP32_4M` (classic ESP32 / 4MB / dio / tgc-ota-4mb) —
+    an explicit **LAB build target** (owner decision 2026-09-04): compile
+    options declared from the "ESP32 Dev Module" board definition
+    (`esp32:esp32:esp32`), NO physical board verified. `build-target-declaration`.
 - Every mandatory profile field must be CONFIRMED with evidence. `UNCONFIRMED`
   mandatory fields block every build, LAB included.
 - Never guess: chip family, flash geometry, pins, partition layout, Ethernet,
@@ -28,6 +32,11 @@ vault first: `obsidian-portal-hardware/README.md` (routing), then its
 - One hardware profile = one package = two BINs (merged/full for USB +
   app-only for OTA) + manifests, bound by one canonical
   `releaseId = <PRODUCT>-<version>-<buildId>` in ONE build run.
+- Every artifact family gets its own version — never reuse or overwrite a
+  version/release across profiles (S3: `0.1.0-initial.1`; classic:
+  `0.2.0-initial.1`).
+- The COM6 investigation is closed (owner instruction 2026-09-04); do not
+  resume detection of that port.
 
 ## Build and release rules
 

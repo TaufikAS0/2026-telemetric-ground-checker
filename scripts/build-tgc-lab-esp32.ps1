@@ -1,0 +1,96 @@
+# Builds the TGC Initial LAB firmware for the CLASSIC ESP32 build target
+# (profile TGC_LAB_ESP32_4M) and emits ONE dual-artifact release package
+# bound by one releaseId (stage=lab):
+#   - merged/full BIN for USB bootstrap/recovery;
+#   - app-only BIN for OTA/LAN;
+#   - manifest.json produced by the universal core manifest builder
+#     + the two library manifests for handoff.
+#
+# This is a BUILD TARGET package (owner decision 2026-09-04), NOT a
+# board-verified one: compile facts (classic ESP32 / 4MB / dio / tgc-ota-4mb)
+# are declared from the available 'ESP32 Dev Module' board definition
+# (fqbn esp32:esp32:esp32). No physical board is checked and nothing is
+# flashed. The ESP32-S3 package (tgc-lab S3 build) is left untouched — this
+# script reuses no S3 bootloader, partition table, or BIN.
+#
+# The repo path contains spaces, which the ESP32 toolchain cannot handle in
+# include flags, so the generated factory-Wi-Fi header and the HAL header are
+# staged into a space-free temporary include directory (same trick as the
+# esp32 core's partition hook).
+param(
+  [string]$OutputDir = "products/tgc/build/tgc_initial_lab_esp32"
+)
+
+$ErrorActionPreference = "Stop"
+$repoRoot = Split-Path -Parent $PSScriptRoot
+$outPath = Join-Path $repoRoot $OutputDir
+$includeDir = Join-Path $env:TEMP "tgc-initial-include-esp32"
+New-Item -ItemType Directory -Force -Path $outPath, $includeDir | Out-Null
+
+# Stage a space-free include dir: HAL header + generated LAB factory header.
+Copy-Item (Join-Path $repoRoot "src\adapters\esp32\telemetric_esp32_hal.h") $includeDir -Force
+node (Join-Path $repoRoot "scripts\generate-factory-wifi-header.mjs") (Join-Path $includeDir "factory_wifi_lab.h")
+if ($LASTEXITCODE -ne 0) { throw "factory header generation failed" }
+# The sketch also includes its local firmware_version.h next to the .ino.
+Copy-Item (Join-Path $repoRoot "products\tgc\tgc_initial_lab_esp32\firmware_version.h") $includeDir -Force
+
+$buildId = git -C $repoRoot rev-parse --short=7 HEAD
+$sourceCommit = git -C $repoRoot rev-parse HEAD
+
+# Official release gate: the worktree must be fully committed (ignored build
+# outputs are excluded by git itself), so the manifest's provenance SHAs can
+# never describe uncommitted source.
+node (Join-Path $repoRoot "scripts\assert-clean-worktree.mjs") $repoRoot
+if ($LASTEXITCODE -ne 0) { throw "dirty-worktree gate failed" }
+$versionHeader = Join-Path $repoRoot "products\tgc\tgc_initial_lab_esp32\firmware_version.h"
+$defines = @{}
+Get-Content -LiteralPath $versionHeader | ForEach-Object {
+  if ($_ -match '^\s*#define\s+(TGC_BOOT_VERSION_(?:MAJOR|MINOR|PATCH))\s+(\d+)\s*$') {
+    $defines[$matches[1]] = [int]$matches[2]
+  }
+  if ($_ -match '^\s*#define\s+TGC_BOOT_VERSION_PRERELEASE\s+(\S+)\s*$') {
+    $defines["PRERELEASE"] = $matches[1]
+  }
+}
+if ($defines.TGC_BOOT_VERSION_MAJOR -eq $null -or $defines.TGC_BOOT_VERSION_MINOR -eq $null -or $defines.TGC_BOOT_VERSION_PATCH -eq $null) {
+  throw "Could not read TGC_BOOT_VERSION_* macros from $versionHeader"
+}
+# The version string is EXACTLY the runtime FIRMWARE_VERSION (no v-prefix),
+# so the manifest, the runtime identity, and the releaseId all agree:
+# 0.2.0-initial.1 -> releaseId TGC-0.2.0-initial.1-<commit>.
+$version = "$($defines.TGC_BOOT_VERSION_MAJOR).$($defines.TGC_BOOT_VERSION_MINOR).$($defines.TGC_BOOT_VERSION_PATCH)"
+if ($defines["PRERELEASE"]) { $version = "$version-$($defines['PRERELEASE'])" }
+
+$compileArgs = @(
+  "compile",
+  "--fqbn", "esp32:esp32:esp32:FlashSize=4M,FlashMode=dio,PartitionScheme=custom",
+  "--build-property", "compiler.cpp.extra_flags=-I$($includeDir -replace '\\','/')",
+  "--output-dir", $outPath,
+  (Join-Path $repoRoot "products\tgc\tgc_initial_lab_esp32")
+)
+& arduino-cli @compileArgs
+if ($LASTEXITCODE -ne 0) { throw "arduino-cli compile failed with exit code $LASTEXITCODE" }
+
+$appBin = Join-Path $outPath "tgc_initial_lab_esp32.ino.bin"
+$mergedBin = Join-Path $outPath "tgc_initial_lab_esp32.ino.merged.bin"
+if (!(Test-Path -LiteralPath $appBin)) { throw "app-only BIN not produced: $appBin" }
+if (!(Test-Path -LiteralPath $mergedBin)) { throw "merged BIN not produced: $mergedBin" }
+
+node (Join-Path $repoRoot "scripts\emit-manifest.mjs") `
+  --app $appBin `
+  --merged $mergedBin `
+  --out (Join-Path $outPath "manifest.json") `
+  --build-id $buildId `
+  --source-commit $sourceCommit `
+  --profile (Join-Path $repoRoot "profiles\TGC_LAB_ESP32_4M\profile.json") `
+  --version $version
+if ($LASTEXITCODE -ne 0) { throw "manifest emission or verification failed" }
+
+node (Join-Path $repoRoot "scripts\emit-library-manifests.mjs") `
+  --manifest (Join-Path $outPath "manifest.json") `
+  --out-dir $outPath `
+  --source-repository "https://github.com/TaufikAS0/2026-telemetric-ground-checker"
+if ($LASTEXITCODE -ne 0) { throw "library manifest emission failed" }
+
+Write-Host "Release package written to: $outPath"
+Get-ChildItem $outPath -Filter *.bin | Select-Object Name, Length

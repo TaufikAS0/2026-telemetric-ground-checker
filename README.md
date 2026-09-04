@@ -9,22 +9,26 @@ Checker measurement, relay/output, or QC function.
 
 GitHub: https://github.com/TaufikAS0/2026-telemetric-ground-checker
 
-## Verified hardware profile
+## Hardware profiles (one package per profile — never a universal BIN)
 
-| Field | Value | Evidence |
+| Field | `TGC_LAB_ESP32S3_16M` (board-verified) | `TGC_LAB_ESP32_4M` (LAB build target) |
 |---|---|---|
-| profileId | `TGC_LAB_ESP32S3_16M` | this repo (`profiles/TGC_LAB_ESP32S3_16M/profile.json`) |
-| chipFamily | `ESP32-S3` (rev v0.2) | read-only `esptool flash_id`, COM11, 2026-09-04 |
-| MAC of profiled board | `e0:72:a1:f4:c0:a4` | same detection |
-| flashSize / flashMode | `16MB` / `qio` (quad) | same detection |
-| partitionScheme | `tgc-ota-16mb` (3MB A/B slots) | `products/tgc/tgc_initial_lab/partitions.csv` |
+| chipFamily | `ESP32-S3` (rev v0.2) — esptool `flash_id`, COM11, 2026-09-04 | `ESP32` (classic) |
+| flashSize / flashMode | `16MB` / `qio` (quad) — same detection | `4MB` / `dio` |
+| partitionScheme | `tgc-ota-16mb` (3MB A/B slots) | `tgc-ota-4mb` (1.875MB A/B slots) |
+| MAC of proven board | `e0:72:a1:f4:c0:a4` | **none — no physical board verified** |
+| Verification level | `board-proven-live` (read-only detection) | `build-target-declaration` (design target only) |
+| Sketch folder | `products/tgc/tgc_initial_lab/` | `products/tgc/tgc_initial_lab_esp32/` |
+| Version family | `0.1.0-initial.1` | `0.2.0-initial.1` (new, never used before) |
 
-**Important honesty note:** the task requested ESP32 classic / "ESP32 Dev
-Module", but read-only chip detection proved the profiled board is an
-**ESP32-S3**, and the second board (COM6) never answered the bootloader
-handshake (chip identity UNCONFIRMED). Per the bootstrap rules, the build
-follows verified identity, not the label: there is **no** classic-ESP32 build
-in this repo yet. See `hardware/board-detection-2026-09-04.md`.
+**Important honesty note:** the ESP32-S3 package comes from read-only chip
+detection of a real board. The classic ESP32 package is an explicit **LAB
+build target** (owner decision): compiled from the "ESP32 Dev Module" board
+definition (`esp32:esp32:esp32:FlashSize=4M,FlashMode=dio,PartitionScheme=custom`),
+with **no physical board verified**. Never flash a target-package BIN onto a
+board whose read-only chip detection does not match the profile. See
+`hardware/board-detection-2026-09-04.md`. The unidentified COM6 device is
+closed for investigation (owner instruction) and stays UNCONFIRMED.
 
 ## Repository layout
 
@@ -32,12 +36,14 @@ in this repo yet. See `hardware/board-detection-2026-09-04.md`.
 AGENTS.md                          repo rules for humans and AI
 profiles/                          hardware profiles (UNCONFIRMED blocks builds)
   _template/profile.json           starting point for a new profile
-  TGC_LAB_ESP32S3_16M/profile.json verified LAB profile + evidence + unknowns
+  TGC_LAB_ESP32S3_16M/profile.json board-verified ESP32-S3 LAB profile + evidence
+  TGC_LAB_ESP32_4M/profile.json    classic ESP32 LAB build-target profile + evidence
 src/core/                          universal bootstrap state machine + manifest
 src/config/factory-wifi.mjs        owner-approved PUBLIC LAB factory Wi-Fi (only credential allowed in Git)
 src/adapters/esp32/                ESP32 HAL (telemetric_esp32_hal.h)
-products/tgc/tgc_initial_lab/      firmware Initial sketch + partitions + version
-scripts/                           build / manifest / clean-worktree tooling
+products/tgc/tgc_initial_lab/      firmware Initial sketch + partitions + version (ESP32-S3 target)
+products/tgc/tgc_initial_lab_esp32/ firmware Initial sketch + partitions + version (classic ESP32 target)
+scripts/                           build / manifest / clean-worktree tooling (one build script per profile)
 tests/                             behavioural tests (node --test)
 hardware/board-detection-2026-09-04.md  board detection record (evidence)
 ```
@@ -55,19 +61,26 @@ git clone https://github.com/TaufikAS0/2026-telemetric-ground-checker.git
 cd 2026-telemetric-ground-checker
 ```
 
-## Build (USB + OTA, one run, one releaseId)
+## Build (USB + OTA, one run, one releaseId, per profile)
 
 ```powershell
 npm test                 # behavioural tests must pass
-npm run build:tgc-lab    # commit first: the script refuses a dirty worktree
+npm run build:tgc-lab    # ESP32-S3 target (board-verified profile)
+npm run build:tgc-lab-esp32   # classic ESP32 target (LAB build target)
 ```
 
-Output in `products/tgc/build/tgc_initial_lab/`:
+Each script commits nothing but refuses a dirty worktree — commit source
+first. Output directories:
+
+| Target | Output directory |
+|---|---|
+| ESP32-S3 | `products/tgc/build/tgc_initial_lab/` (`tgc_initial_lab.ino.*`) |
+| classic ESP32 | `products/tgc/build/tgc_initial_lab_esp32/` (`tgc_initial_lab_esp32.ino.*`) |
 
 | File | Purpose |
 |---|---|
-| `tgc_initial_lab.ino.merged.bin` | **merged/full** — flash over USB (bootloader + partition table + app) |
-| `tgc_initial_lab.ino.bin` | **app-only** — OTA/LAN update image |
+| `*.ino.merged.bin` | **merged/full** — flash over USB (bootloader + partition table + app) |
+| `*.ino.bin` | **app-only** — OTA/LAN update image |
 | `manifest.json` | build manifest binding both BINs to one `releaseId` |
 | `manifest-full.json` | firmware-library manifest for the merged BIN (handoff) |
 | `manifest-app-only.json` | firmware-library manifest for the app BIN (handoff) |
@@ -90,12 +103,24 @@ or, with esptool (merged BIN already contains everything):
 python -m esptool --chip esp32s3 --port COM11 --baud 460800 write_flash 0x0 tgc_initial_lab.ino.merged.bin
 ```
 
-Flash only onto a board whose read-only detection matches the profile
-(ESP32-S3, 16MB). Never flash this BIN onto classic ESP32 or another profile.
+Flash only onto a board whose read-only detection matches the target profile.
+Never flash a BIN of one profile onto a board of another profile.
 
-## Two boards, one package, unique runtime identity
+## Flash over USB — classic ESP32 target (after a matching board is verified)
 
-The package above is built for the ONE verified profile. Because unit
+```powershell
+arduino-cli upload -p <COM> --fqbn esp32:esp32:esp32:FlashSize=4M,FlashMode=dio,PartitionScheme=custom --input-dir products/tgc/build/tgc_initial_lab_esp32
+```
+
+or, with esptool (merged BIN already contains everything):
+
+```powershell
+python -m esptool --chip esp32 --port <COM> --baud 460800 write_flash 0x0 tgc_initial_lab_esp32.ino.merged.bin
+```
+
+## Multiple units, one package per profile, unique runtime identity
+
+Each package serves all boards matching ITS profile only. Because unit
 identity is derived at **runtime** from the eFuse base MAC, the SAME package
 serves multiple identical boards without rebuilding:
 
@@ -105,10 +130,12 @@ serves multiple identical boards without rebuilding:
 
 \* suffix = final six hex characters of the base MAC, computed at boot —
 every unit is unique by construction; no two boards share an AP name,
-hostname, or deviceId. The COM6 board stays out of scope until it answers
-read-only chip detection; if it is ever identified as classic ESP32 with a
-different flash size, it needs its **own profile and separate package** (no
-universal BIN across chip families).
+hostname, or deviceId. Boards of a different profile (e.g. a classic ESP32
+board for `TGC_LAB_ESP32_4M`) need the matching profile's package (no
+universal BIN across chip families or flash sizes). The unidentified COM6
+device is closed for investigation (owner instruction, 2026-09-04) and stays
+UNCONFIRMED — it receives no package until it answers read-only chip
+detection.
 
 ## First boot and provisioning flow
 
